@@ -1764,6 +1764,10 @@ namespace t3mpbotchatbot
                     {
                         client.SendMessage(channel, "/me : Please specify a lvl of raid you want to start with !raidstart <lvl>.");
                     }
+                    else if (!string.IsNullOrEmpty(args[1]) && !args[1].All(Char.IsDigit))
+                    {
+                        client.SendMessage(channel, "/me : This is not valid, stop trying to break me! Please specify a lvl of raid you want to start with !raidstart <lvl>.");
+                    }
                     else
                     {
                         XDocument Adv = XDocument.Load(@"Data\Adventure.xml");
