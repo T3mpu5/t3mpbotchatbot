@@ -149,6 +149,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Adventure.cs" />
+    <Compile Include="Battle.cs" />
     <Compile Include="Rift.cs" />
     <Compile Include="Shop.cs" />
     <Compile Include="Timers.cs" />

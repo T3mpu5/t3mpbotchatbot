@@ -61,7 +61,7 @@ namespace t3mpbotchatbot {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to q0eg9s7stq2l8v179vvkgf7hq9lgwv.
+        ///   Looks up a localized string similar to k1lceru45mv3olh2l1rukpab257rsb.
         /// </summary>
         internal static string BotToken {
             get {
@@ -88,7 +88,7 @@ namespace t3mpbotchatbot {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to 7ig9f2px9nolcdw2usjg3wf8c50kej.
+        ///   Looks up a localized string similar to gp762nuuoqcoxypju8c569th9wz7q5.
         /// </summary>
         internal static string ClientID {
             get {

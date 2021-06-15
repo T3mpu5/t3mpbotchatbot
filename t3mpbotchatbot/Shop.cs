@@ -6,6 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using TwitchLib.Client;
 using System.IO;
+using TwitchLib.Api.Helix.Models.Extensions.Transactions;
 
 namespace t3mpbotchatbot
 {
@@ -35,10 +36,21 @@ namespace t3mpbotchatbot
             string date = ele.Attribute("LastDate").Value.ToString();
             string slot1 = RandomLoot();
             string cost1 = GetCost(slot1);
-            string slot2 = RandomLoot();
-            string cost2 = GetCost(slot2);
+            string slot2;
+            string cost2;
             string slot3;
             string cost3;
+            List<int> list = new List<int>() { 21, 22, 23, 24, 25, 26, 27, 28, 29, 30 };
+            if (random.Next(1, 11) == 5)
+            {
+                slot2 = "Loot Bag Upgrade (+1 Slot)";
+                cost2 = "2500";
+            }
+            else
+            {
+                slot2 = RandomLoot();
+                cost2 = GetCost(slot2);
+            }
             if (random.Next(1, 4) == 3)
             {
                 slot3 = "Rift Token";
@@ -49,9 +61,9 @@ namespace t3mpbotchatbot
                 slot3 = adventure.MakeRing(20);
                 cost3 = "1000";
             }
-            else if (random.Next(1,101) == 22)
+            else if (list.Contains(random.Next(1,101)))
             {
-                slot3 = adventure.MakeRaidLoot("T3MPBOT", "T3MPBOT", 50);
+                slot3 = adventure.MakeRaidLoot("T3MPBOT", "T3MPBOT", 100);
                 cost3 = "1000";
             }
             else if (random.Next(1,101) == 33)
@@ -183,20 +195,39 @@ namespace t3mpbotchatbot
             return Coins.ToString() + "." + Slot.ToString();
         }
 
+        public int GetMaxBagSlots(string channel, string user)
+        {
+            XDocument Loot = XDocument.Load(@"Data\Loot.xml");
+            XElement P = Loot.Element("loot").Element(Main.GetTopic(channel, user));
+            string Max = null;
+            try
+            {
+                Max = P.Attribute("MaxSlots").Value;
+            }
+            catch
+            {
+
+            }
+            if (Max == null)
+            {
+                Max = "5";
+            }
+            return Convert.ToInt32(Max);
+        }
+
         public bool IsBagFull(string channel, string user)
         {
             Adventure adventure = new Adventure();
             int i = 1;
+            int s = 1;
             bool BagFull = true;
-            Dictionary<int, string> methods = new Dictionary<int, string>
+            Dictionary<int, string> methods = new Dictionary<int, string>();
+            while (s <= GetMaxBagSlots(channel, user))
             {
-                { 1, adventure.GetLootSlot1(channel, user) },
-                { 2, adventure.GetLootSlot2(channel, user) },
-                { 3, adventure.GetLootSlot3(channel, user) },
-                { 4, adventure.GetLootSlot4(channel, user) },
-                { 5, adventure.GetLootSlot5(channel, user) }
-            };
-            while (i <= 5)
+                methods.Add(s, adventure.GetLootSlotN(channel, user, s));
+                s++;
+            }
+            while (i <= GetMaxBagSlots(channel, user))
             {
                 if (methods[i] == null)
                 {
@@ -255,6 +286,43 @@ namespace t3mpbotchatbot
                             P.SetAttributeValue("Slot" + CS[1], Convert.ToInt32(CS[0]) - Cost + " Gold Coins");
                         }
                     Loot.Save(@"Data\Loot.xml");
+                    }
+                }
+            }
+            else if (Item.Contains("Upgrade"))
+            {
+                XDocument Loot = XDocument.Load(@"Data\Loot.xml");
+                XElement P = Loot.Element("loot").Element(Main.GetTopic(channel, user));
+                if (Convert.ToInt32(CS[0]) < Cost)
+                {
+                    Main.client.SendMessage(channel, "/me : You can't afford this item");
+                }
+                else if (!CanBuyUpgrade(channel, user))
+                {
+                    Main.client.SendMessage(channel, "/me : You have already purchased this today!");
+                }
+                else
+                {
+                    lock (Main._lockloot)
+                    {
+                        P.SetAttributeValue("MaxSlots", GetMaxBagSlots(channel, user) + 1);
+                        if (Convert.ToInt32(CS[0]) == Cost)
+                        {
+                            P.SetAttributeValue("Slot" + CS[1], null);
+                        }
+                        else
+                        {
+                            P.SetAttributeValue("Slot" + CS[1], Convert.ToInt32(CS[0]) - Cost + " Gold Coins");
+                        }
+                        Loot.Save(@"Data\Loot.xml");
+                    }
+                    lock (Main._lockxp)
+                    {
+                        XDocument XP = XDocument.Load(@"Data\XP.xml");
+                        XElement P2 = XP.Element("users").Element(Main.GetTopic(channel, user));
+                        P2.SetAttributeValue("BuyDate", DateTime.Now.Date);
+                        XP.Save(@"Data\XP.xml");
+                        Main.client.SendMessage(channel, "/me : " + user.ToLower() + " bought " + Item);
                     }
                 }
             }
@@ -343,6 +411,31 @@ namespace t3mpbotchatbot
                     }
                     Loot.Save(@"Data\Loot.xml");
                 }
+            }
+        }
+
+        public bool CanBuyUpgrade(string channel, string user)
+        {
+            UpdateOutlaws(channel, user);
+            lock (Main._lockxp)
+            {
+                XDocument XP = XDocument.Load(@"Data\XP.xml");
+                XElement P = XP.Element("users").Element(Main.GetTopic(channel, user));
+                string BDate = null;
+                bool CanBuy = true;
+                try
+                {
+                    BDate = P.Attribute("BuyDate").Value;
+                }
+                catch
+                {
+
+                }
+                if (BDate != null && DateTime.Parse(BDate) == DateTime.Now.Date)
+                {
+                    CanBuy = false;
+                }
+                return CanBuy;
             }
         }
 
@@ -612,7 +705,7 @@ namespace t3mpbotchatbot
             {
                 XDocument loot = XDocument.Load(@"Data\Loot.xml");
                 XElement P = loot.Element("loot").Element(Main.GetTopic(channel, user));
-                if (adventure.GetLootSlot1(channel, user).Contains("Coins"))
+               if (adventure.GetLootSlot1(channel, user).Contains("Coins"))
                 {
                     P.SetAttributeValue("Slot1", (coins + Convert.ToInt32(adventure.GetLootSlot1(channel, user).Substring(0, adventure.GetLootSlot1(channel, user).IndexOf(" ")))) + " Gold Coins");
                 }

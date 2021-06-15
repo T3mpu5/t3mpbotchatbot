@@ -303,6 +303,34 @@ namespace t3mpbotchatbot
             }
         }
 
+        public int GetPlayerFai(string channel, string user)
+        {
+            lock (Main._lockstats)
+            {
+                XElement Stats = XElement.Load(@"Data\Stats.xml");
+                int Fai = 0;
+                foreach (XElement ele in Stats.Descendants(Main.GetTopic(channel, user)))
+                {
+                    Fai = Convert.ToInt32(ele.Attribute("Faith").Value);
+                }
+                return Fai;
+            }
+        }
+
+        public int GetPlayerSpe(string channel, string user)
+        {
+            lock (Main._lockstats)
+            {
+                XElement Stats = XElement.Load(@"Data\Stats.xml");
+                int Spe = 0;
+                foreach (XElement ele in Stats.Descendants(Main.GetTopic(channel, user)))
+                {
+                    Spe = Convert.ToInt32(ele.Attribute("Speed").Value);
+                }
+                return Spe;
+            }
+        }
+
         private int GetMonsterLvl(string channel)
         {
             lock (Main._lockadv)
@@ -789,7 +817,7 @@ namespace t3mpbotchatbot
             string player3;
             string player4;
             string player5;
-            string player6; 
+            string player6;
             string player7;
             string player8;
             lock (Main._lockadv)
@@ -1399,6 +1427,27 @@ namespace t3mpbotchatbot
             }
         }
 
+        public string GetLootSlotN(string channel, string user, int slot)
+        {
+            lock (Main._lockloot)
+            {
+                XElement loot = XElement.Load(@"Data\Loot.xml");
+                string Slot = null;
+                foreach (XElement ele in loot.Descendants(Main.GetTopic(channel, user)))
+                {
+                    try
+                    {
+                        Slot = ele.Attribute("Slot" + slot).Value.ToString();
+                    }
+                    catch
+                    {
+                        Slot = null;
+                    }
+                }
+                return Slot;
+            }
+        }
+
         public string GetWeapon(string channel, string user)
         {
             lock (Main._lockloot)
@@ -1457,7 +1506,7 @@ namespace t3mpbotchatbot
 
         public bool IsCrit(string channel, string user)
         {
-            double critChance = (((GetPlayerInt(channel, user) + GetPlayerDex(channel, user) / 2) / GetMonsterDex(channel)) * 5);
+            double critChance = ((((GetPlayerInt(channel, user) + GetPlayerDex(channel, user)) / 2) / GetMonsterDex(channel)) * 5);
             critChance = Convert.ToDouble(critChance.ToString("#.000"));
             if (GetWeapon(channel, user).Contains("Axe"))
             {
@@ -1479,7 +1528,7 @@ namespace t3mpbotchatbot
 
         public bool IsMCrit(string channel, string target)
         {
-            double critChance = (((GetMonsterInt(channel) + GetMonsterDex(channel) / 2) / GetPlayerDex(channel, target)) * 5);
+            double critChance = ((((GetMonsterInt(channel) + GetMonsterDex(channel)) / 2) / GetPlayerDex(channel, target)) * 5);
             critChance = Convert.ToDouble(critChance.ToString("#.000"));
             if (random.Next(1, 100000) <= (critChance * 1000))
             {
@@ -1712,15 +1761,16 @@ namespace t3mpbotchatbot
                     {
                         Heals = GetPlayerHP(channel, user);
                     }
-                    else {
+                    else
+                    {
                         Heals = (PHP + Math.Floor(Convert.ToDouble(GetPlayerHP(channel, user)) / 5));
                     }
-                        P.SetAttributeValue("HP", (Heals));
+                    P.SetAttributeValue("HP", (Heals));
                     Adv.Save(@"Data\Adventure.xml");
-                foreach (string plyr in PlayerList[channel])
-                {
-                    Main.client.SendWhisper(plyr, "[HEAL] " + user.ToLower() + "'s " + GetRing(channel, user) + " has healed them, they are now at (" + Heals + ") HP.");
-                }
+                    foreach (string plyr in PlayerList[channel])
+                    {
+                        Main.client.SendWhisper(plyr, "[HEAL] " + user.ToLower() + "'s " + GetRing(channel, user) + " has healed them, they are now at (" + Heals + ") HP.");
+                    }
                     Console.WriteLine("Healed!");
                 }
             }
@@ -2012,7 +2062,7 @@ namespace t3mpbotchatbot
                     {
                         XPToGive = Convert.ToInt32(Math.Floor(Dmg / 7));
                     }
-                    else 
+                    else
                     {
                         XPToGive = Convert.ToInt32(Math.Floor(Dmg / 10));
                     }
@@ -2032,31 +2082,42 @@ namespace t3mpbotchatbot
         public string GetNextLootSlot(string channel, string user)
         {
             CheckLootUser(channel, user);
-            string Slot;
-            if (GetLootSlot1(channel, user) == null)
+            string Slot = "error";
+            Shop shop = new Shop();
+            int s = 1;
+            while (s <= shop.GetMaxBagSlots(channel, user))
             {
-                Slot = "Slot1";
+                if (GetLootSlotN(channel, user, s) == null)
+                {
+                    Slot = "Slot" + s;
+                    break;
+                }
+                s++;
             }
-            else if (GetLootSlot2(channel, user) == null)
-            {
-                Slot = "Slot2";
-            }
-            else if (GetLootSlot3(channel, user) == null)
-            {
-                Slot = "Slot3";
-            }
-            else if (GetLootSlot4(channel, user) == null)
-            {
-                Slot = "Slot4";
-            }
-            else if (GetLootSlot5(channel, user) == null)
-            {
-                Slot = "Slot5";
-            }
-            else
-            {
-                Slot = "Error";
-            }
+            //if (GetLootSlot1(channel, user) == null)
+            //{
+            //    Slot = "Slot1";
+            //}
+            //else if (GetLootSlot2(channel, user) == null)
+            //{
+            //    Slot = "Slot2";
+            //}
+            //else if (GetLootSlot3(channel, user) == null)
+            //{
+            //    Slot = "Slot3";
+            //}
+            //else if (GetLootSlot4(channel, user) == null)
+            //{
+            //    Slot = "Slot4";
+            //}
+            //else if (GetLootSlot5(channel, user) == null)
+            //{
+            //    Slot = "Slot5";
+            //}
+            //else
+            //{
+            //    Slot = "Error";
+            //}
             return Slot;
         }
 
@@ -2154,7 +2215,7 @@ namespace t3mpbotchatbot
         private void GiveRaidLoot(string channel, string user)
         {
             Shop shop = new Shop();
-            if ((GetPlayerLoo(channel, user) / 100 + 1) * 1000 >= random.Next(1,3001))
+            if ((GetPlayerLoo(channel, user) / 100 + 1) * 1000 >= random.Next(1, 3001))
             {
                 int LootChance = ((GetMonsterLvl(channel) + 5) / 3);
                 string Loot;
@@ -2263,7 +2324,7 @@ namespace t3mpbotchatbot
             string Loot;
             if (random.Next(6) < 5)
             {
-                Loot = MakeRaidLoot("T3MPU5_FU91T_", "T3MPU5_FU91T_",LootChance);
+                Loot = MakeRaidLoot("T3MPU5_FU91T_", "T3MPU5_FU91T_", LootChance);
             }
             else
             {
@@ -2274,52 +2335,34 @@ namespace t3mpbotchatbot
 
         private void GiveCoin(string channel, string user)
         {
-            int Coins = random.Next(1, GetMonsterLvl(channel));
+            Shop shop = new Shop();
+            int Coins = random.Next(1, (GetMonsterLvl(channel) + 1));
             Main.client.SendMessage(channel, "/me : [LOOT] " + user.ToLower() + " found loot: " + Coins + " Gold Coins");
             CheckLootUser(channel, user);
+            int s = 1;
+            string Slot = null;
+            while (s <= shop.GetMaxBagSlots(channel, user))
+            {
+                string Loot = GetLootSlotN(channel, user, s);
+                if (Loot != null && Loot.Contains("Coins"))
+                {
+                    Slot = "Slot" + s;
+                    break;
+                }
+                s++;
+            }
             lock (Main._lockloot)
             {
                 XDocument loot = XDocument.Load(@"Data\Loot.xml");
                 XElement P = loot.Element("loot").Element(Main.GetTopic(channel, user));
-                if (GetLootSlot1(channel, user) != null && GetLootSlot1(channel, user).Contains("Coins"))
+                if (Slot != null)
                 {
-                    P.SetAttributeValue("Slot1", (Coins + Convert.ToInt32(GetLootSlot1(channel, user).Substring(0, GetLootSlot1(channel, user).IndexOf(" ")))) + " Gold Coins");
+                    P.SetAttributeValue(Slot, (Coins + Convert.ToInt32(GetLootSlotN(channel, user, s).Substring(0, GetLootSlotN(channel, user, s).IndexOf(" ")))) + " Gold Coins");
                 }
-                else if (GetLootSlot2(channel, user) != null && GetLootSlot2(channel, user).Contains("Coins"))
+                else if (!shop.IsBagFull(channel, user))
                 {
-                    P.SetAttributeValue("Slot2", (Coins + Convert.ToInt32(GetLootSlot2(channel, user).Substring(0, GetLootSlot2(channel, user).IndexOf(" ")))) + " Gold Coins");
-                }
-                else if (GetLootSlot3(channel, user) != null && GetLootSlot3(channel, user).Contains("Coins"))
-                {
-                    P.SetAttributeValue("Slot3", (Coins + Convert.ToInt32(GetLootSlot3(channel, user).Substring(0, GetLootSlot3(channel, user).IndexOf(" ")))) + " Gold Coins");
-                }
-                else if (GetLootSlot4(channel, user) != null && GetLootSlot4(channel, user).Contains("Coins"))
-                {
-                    P.SetAttributeValue("Slot4", (Coins + Convert.ToInt32(GetLootSlot4(channel, user).Substring(0, GetLootSlot4(channel, user).IndexOf(" ")))) + " Gold Coins");
-                }
-                else if (GetLootSlot5(channel, user) != null && GetLootSlot5(channel, user).Contains("Coins"))
-                {
-                    P.SetAttributeValue("Slot5", (Coins + Convert.ToInt32(GetLootSlot5(channel, user).Substring(0, GetLootSlot5(channel, user).IndexOf(" ")))) + " Gold Coins");
-                }
-                else if (GetLootSlot1(channel, user) == null)
-                {
-                    P.SetAttributeValue("Slot1", Coins + " Gold Coins");
-                }
-                else if (GetLootSlot2(channel, user) == null)
-                {
-                    P.SetAttributeValue("Slot2", Coins + " Gold Coins");
-                }
-                else if (GetLootSlot3(channel, user) == null)
-                {
-                    P.SetAttributeValue("Slot3", Coins + " Gold Coins");
-                }
-                else if (GetLootSlot4(channel, user) == null)
-                {
-                    P.SetAttributeValue("Slot4", Coins + " Gold Coins");
-                }
-                else if (GetLootSlot5(channel, user) == null)
-                {
-                    P.SetAttributeValue("Slot5", Coins + " Gold Coins");
+
+                    P.SetAttributeValue(GetNextLootSlot(channel, user), Coins + " Gold Coins");
                 }
                 else
                 {
@@ -2737,7 +2780,7 @@ namespace t3mpbotchatbot
             Console.WriteLine("4");
             if (random.Next(1, 4) == 3)
             {
-                if (IsHard(channel))
+                if (IsHard(channel) || IsRaid(channel) || Is150(channel))
                 {
                     if (GetMonsterHP(channel) <= 0)
                     {

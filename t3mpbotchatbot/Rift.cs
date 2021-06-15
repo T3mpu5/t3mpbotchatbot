@@ -321,6 +321,42 @@ namespace t3mpbotchatbot
             return Slot1;
         }
 
+        public int GetVibShards(string channel, string user)
+        {
+            XElement loot = XElement.Load(@"Data\Loot.xml");
+            int Slot1 = 0;
+            foreach (XElement ele in loot.Descendants(Main.GetTopic(channel, user)))
+            {
+                try
+                {
+                    Slot1 = Convert.ToInt32(ele.Element("Materials").Attribute("Vibranium").Value);
+                }
+                catch
+                {
+                    Slot1 = 0;
+                }
+            }
+            return Slot1;
+        }
+
+        public int GetInfShards(string channel, string user)
+        {
+            XElement loot = XElement.Load(@"Data\Loot.xml");
+            int Slot1 = 0;
+            foreach (XElement ele in loot.Descendants(Main.GetTopic(channel, user)))
+            {
+                try
+                {
+                    Slot1 = Convert.ToInt32(ele.Element("Materials").Attribute("Infinity").Value);
+                }
+                catch
+                {
+                    Slot1 = 0;
+                }
+            }
+            return Slot1;
+        }
+
         private int GetRiftPlayerHP(string channel, string user)
         {
             lock (Main._lockrift)
